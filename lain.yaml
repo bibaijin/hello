@@ -1,13 +1,13 @@
-appname: hello
+appname: hello-lain
 
 build:
   base: golang:1.8
   prepare:
     version: 20170421
   script:
-    - mkdir $GOPATH/src/github.com/bibaijin/tcp-reverse-proxy/
-    - cp -rf . $GOPATH/src/github.com/bibaijin/tcp-reverse-proxy/
-    - cd $GOPATH/src/github.com/bibaijin/tcp-reverse-proxy/ && go install
+    - mkdir -p $GOPATH/src/github.com/bibaijin/hello/
+    - cp -rf . $GOPATH/src/github.com/bibaijin/hello/
+    - cd $GOPATH/src/github.com/bibaijin/hello/ && go install
 
 release:
   dest_base: registry.yxapp.xyz/centos:1.0.1
