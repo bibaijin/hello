@@ -1,16 +1,16 @@
-appname: hello-lain
+appname: kai-hello
 
 build:
-  base: golang:1.8
+  base: registry.yxapp.xyz/golang:1.8.3
   prepare:
-    version: 20170421
+    version: 201707291453
   script:
     - mkdir -p $GOPATH/src/github.com/bibaijin/hello/
     - cp -rf . $GOPATH/src/github.com/bibaijin/hello/
     - cd $GOPATH/src/github.com/bibaijin/hello/ && go install
 
 release:
-  dest_base: registry.yxapp.xyz/centos:1.0.1
+  dest_base: registry.yxapp.xyz/centos:7.3.1611
   copy:
     - src: $GOPATH/bin/hello
       dest: /lain/app/hello
@@ -20,3 +20,5 @@ web:
   port: 8080
   memory: 64M
   healthcheck: "/ping"
+  volumes:
+    - /var/log/test
