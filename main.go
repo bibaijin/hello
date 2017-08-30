@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -17,24 +20,40 @@ func main() {
 	}
 	defer logger.Sync()
 
-	http.HandleFunc("/ping", handle(ping, logger))
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM)
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		logger.Fatal("http.ListenAndServe() failed.",
-			zap.String("address", ":8080"),
-			zap.Error(err),
-		)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ping", handle(ping, logger))
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
 	}
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			logger.Error("server.ListenAndServe() failed.",
+				zap.String("Addr", ":8080"),
+				zap.Error(err),
+			)
+		}
+	}()
+	logger.Info("server.ListenAndServe()...", zap.String("Addr", ":8080"))
+	defer func() {
+		if err := server.Close(); err != nil {
+			logger.Error("server.Close() failed.", zap.Error(err))
+		}
+	}()
+
+	<-quit
+	logger.Info("Shutting down...")
+	time.Sleep(1 * time.Second)
 }
 
 func ping(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
 	if _, err := w.Write([]byte("OK")); err != nil {
 		logger.Error("w.Write([]byte(\"OK\")) failed.", zap.Error(err))
 	}
-
-	file, _ := os.OpenFile("/var/log/test/test.out", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
-	file.Write([]byte("OK.\n"))
-	file.Close()
 }
 
 func handle(f func(w http.ResponseWriter, r *http.Request, logger *zap.Logger), logger *zap.Logger) http.HandlerFunc {
